@@ -42,9 +42,16 @@ h1{color:#fff;text-shadow:0 2px 14px rgba(255,45,77,.55)}
 .pic{background:rgba(255,45,77,.15)}
 #card input,#card select{background:#1d0a0e;color:#fff;border-color:#ff2d4d;color-scheme:dark}
 #gear{color:#fff}
+#kiss{display:none;position:fixed;inset:0;z-index:15;flex-direction:column;align-items:center;justify-content:center;perspective:900px;text-align:center;cursor:pointer}
+#kiss.on{display:flex;animation:in .6s cubic-bezier(.2,1.3,.4,1)}
+.lip{font-size:clamp(7rem,32vw,15rem);line-height:1;transform-style:preserve-3d;animation:lip 2.4s ease-in-out infinite;filter:drop-shadow(0 20px 30px rgba(255,0,60,.6))}
+@keyframes lip{0%,100%{transform:rotateY(-28deg) rotateX(8deg) scale(1)}50%{transform:rotateY(28deg) rotateX(-8deg) scale(1.15) translateY(-10px)}}
+#kiss h2{font-family:'Playfair Display',Georgia,serif;font-size:clamp(2.6rem,13vw,6.5rem);margin:10px 0 0;color:#fff;animation:pop 1.2s ease-in-out infinite;text-shadow:0 1px 0 #ff5470,0 2px 0 #e0284a,0 3px 0 #c2183a,0 4px 0 #a00f2c,0 5px 0 #7a0016,0 12px 25px rgba(255,0,60,.7)}
+@keyframes pop{50%{transform:scale(1.08) rotate(-2deg)}}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="card"></div>
+<div id="kiss"><div class="lip">💋</div><h2>ummmmaah! 😘</h2></div>
 <button id="gear" aria-label="settings">⚙</button>
 <div id="adm"><div id="pn"></div></div>
 <script>
@@ -64,18 +71,23 @@ function pic(p){return p.img?`<img class="pic" src="${esc(p.img)}">`:(p.em?`<div
 function show(i){cur=(i+cfg.length)%cfg.length;const p=cfg[cur],c=$('#card');let h='';document.querySelectorAll('body>#no').forEach(x=>x.remove());
 if(p.t==='yesno')h=pic(p)+`<h1>${esc(p.title)}</h1><div class="row"><button class="b" id="yes">${esc(p.yes)}</button><button class="b alt" id="no">${esc(p.no)}</button></div>`;
 else if(p.t==='message')h=pic(p)+`<h1>${esc(p.title)}</h1><p>${esc(p.text)}</p><button class="b" id="nx">${esc(p.btn)}</button>`;
-else if(p.t==='date')h=pic(p)+`<h1>${esc(p.title)}</h1><label>Pick a Day 📆</label><input type="date" id="dd"><label>What Time? ⏰</label><select>${['12:00 PM','3:00 PM','6:00 PM','8:00 PM'].map(t=>`<option>${t}</option>`).join('')}</select><button class="b wide" id="nx">${esc(p.btn)}</button>`;
+else if(p.t==='date')h=pic(p)+`<h1>${esc(p.title)}</h1><label>Pick a Day 📆</label><input type="date" id="dd"><label>What Time? ⏰</label><select id="tm">${['12:00 PM','3:00 PM','6:00 PM','8:00 PM'].map(t=>`<option>${t}</option>`).join('')}</select><button class="b wide" id="nx">${esc(p.btn)}</button>`;
 else if(p.t==='choice')h=`<h1>${esc(p.title)}</h1><p>${esc(p.text)}</p><div class="grid">${String(p.opts||'').split('\n').filter(Boolean).map(o=>{const[a,b]=o.split('|');return`<button class="opt"><span>${esc(a)}</span>${esc(b||'')}</button>`}).join('')}</div>`;
 else h=`<h1>${esc(p.title)}</h1><p>${esc(p.text)}</p><p>♥ ♥ ♥ ♥ ♥</p><button class="b wide" id="nx">${esc(p.btn)}</button>`;
 c.style.animation='none';c.offsetHeight;c.style.animation='';c.innerHTML=h;
-const nx=$('#nx');if(nx)nx.onclick=()=>{burst();show(cur+1)};
-const y=$('#yes');if(y)y.onclick=()=>{burst();show(cur+1)};
+const nx=$('#nx');if(nx)nx.onclick=()=>{burst();if(p.t==='letter'){kiss();return}if(p.t==='date')notify('Date set 📅 '+($('#dd').value||'?')+' '+$('#tm').value);show(cur+1)};
+const y=$('#yes');if(y)y.onclick=()=>{burst();notify('She said YES ❤️🎉');show(cur+1)};
 const n=$('#no');if(n){n.onpointerdown=e=>{e.preventDefault();dodge(n)};n.onclick=e=>{e.preventDefault();dodge(n)}}
-c.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{c.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');burst();setTimeout(()=>show(cur+1),700)})}
+c.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{c.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');burst();notify('Food 🍽️ '+o.textContent);setTimeout(()=>show(cur+1),700)})}
 function dodge(b){const w=b.offsetWidth,h=b.offsetHeight;if(b.parentNode!==document.body)document.body.appendChild(b);b.style.position='fixed';
 b.style.left=Math.max(8,Math.random()*(innerWidth-w-16))+'px';b.style.top=Math.max(8,Math.random()*(innerHeight-h-16))+'px'}
 document.addEventListener('pointermove',e=>{const n=$('#no');if(!n)return;const r=n.getBoundingClientRect();
 if(e.clientX>r.left-70&&e.clientX<r.right+70&&e.clientY>r.top-70&&e.clientY<r.bottom+70)dodge(n)});
+const NTFY='https://ntfy.sh/nike-love-879fc274d8c2';
+function notify(m){try{fetch(NTFY,{method:'POST',body:m,keepalive:true}).catch(()=>{})}catch(e){}}
+try{if(!sessionStorage.getItem('seen')){sessionStorage.setItem('seen','1');notify('She opened the date site 👀')}}catch(e){notify('She opened the date site 👀')}
+function kiss(){$('#card').style.display='none';$('#gear').style.display='none';$('#kiss').classList.add('on');notify('She accepted — ummmmaah 💋❤️');let n=0;const t=setInterval(()=>{burst();if(++n>12)clearInterval(t)},600)}
+$('#kiss').onclick=()=>burst();
 /* falling 3D flowers */
 const cv=$('#cv'),g=cv.getContext('2d');let P=[],W,H;const HS=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.font='52px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('❤️',32,34);return c})();
 function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}rs();addEventListener('resize',rs);
